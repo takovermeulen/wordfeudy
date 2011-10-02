@@ -4,7 +4,7 @@ require 'mechanize'
 require 'digest/sha1'
 
 class Wordfeud
-  attr_accessor :games, :game, :board, :loggedin, :score_template
+  attr_accessor :board, :loggedin, :score_template
   def initialize(host = 'game01.wordfeud.com')
     @loggedin = false
     @host = host
@@ -43,11 +43,29 @@ class Wordfeud
     return response
   end
   
-  def games
+  def getgames
       url = "/wf/user/games/"
       response = post(url)
       games = response["content"]["games"]
       games.find_all{|game| game["is_running"] == true }
+  end
+  
+  def games(userid)
+    games = Array.new
+    getgames.each do |arr|
+      game = Hash.new 
+      game["gameid"] = arr["id"]
+      game["opponent"] = arr["players"].select{|game| game["id"] != userid}[0]["username"]
+      game["opponent_score"] = arr["players"].select{|game| game["id"] != userid}[0]["score"]
+      if arr["players"].select{|game| game["id"] != userid}[0]["position"] != 1
+        game["my_turn"] = true
+      else
+        game["my_turn"] = false
+      end
+      game["my_score"] = arr["players"].select{|game| game["id"] == userid}[0]["score"]
+      games << game
+    end
+    return games
   end
  
   def game(gameid)
@@ -109,10 +127,12 @@ class Wordfeud
         unless col.empty?
           tile = col.find_all{|tiley| tiley[1] == y }
           unless tile.empty?
-            html << "<div class=\"tile " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">" + tile[0][2] + "<\/div>"
+            html << "<div class=\"tile " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">" + tile[0][2].to_s + "<\/div>"
           else
             html << "<div class=\"tile empty " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;<\/div>"
           end
+        else
+            html << "<div class=\"tile empty " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;<\/div>"
         end
       end
       html << "<\/div>"

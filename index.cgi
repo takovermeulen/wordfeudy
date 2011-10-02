@@ -13,7 +13,7 @@ cgi = CGI.new
 puts cgi.header
 params = cgi.params
 @message = "\&nbsp\;"
-@input = "\&nbsp\;"
+@form_input = "\&nbsp\;"
 @board = "\&nbsp\;"
 
 def loginform
@@ -31,34 +31,44 @@ def loginsession
   @wf.login(@sess["email"], @sess["password"])
 end
 
-def showgames
+def showgames(userid)
   loginsession
-  games = Array.new
-  @wf.games.each do |arr|
-    game = Hash.new 
-    game["id"] = arr["id"]
-    game["test"] = "bla"
-    games << game  
+  @form_input << "<h1>Current games<\/h1>"
+  if not @wf.games(userid).empty?
+    
+    if not @wf.games(userid).select{|game| game["my_turn"] == true}.empty?
+      @form_input << "<h2>My turn<\/h2>"
+    end
+    @wf.games(userid).select{|game| game["my_turn"] == true}.each do |game|
+      @form_input << "<a href=\"index.cgi?action=board&gameid=" + game["gameid"].to_s + "\">" + "Game against " + game["opponent"].to_s + " (me: " + game["my_score"].to_s + ", opponent: " + game["opponent_score"].to_s + ")<\/a><br>"
+    end
+    if not @wf.games(userid).select{|game| game["my_turn"] == false}.empty?
+      @form_input << "<h2>Waiting for opponent\'s turn<\/h2>"
+    end
+    @wf.games(userid).select{|game| game["my_turn"] == false}.each do |game|
+      @form_input << "<a href=\"index.cgi?action=board&gameid=" + game["gameid"].to_s + "\">" + "Game against " + game["opponent"].to_s + " (me: " + game["my_score"].to_s + ", opponent: " + game["opponent_score"].to_s + ")<\/a><br>"
+    end
+  else
+    @form_input << "No currently active games found"
   end
-  @form_input = games
-  @message = @wf.games
 end
 
 case params["action"][0] 
 	when "board"
     loginsession
-	  @board = @wf.printboardhtml(params["boardid"])  
+	  @board = @wf.printboardhtml(params["gameid"][0])  
+	  showgames(@sess["userid"])
 	when "games"
-	  showgames
+	  showgames(@sess["userid"])
   when "login"
     @wf = Wordfeud.new
   	resp = @wf.login(params["email"][0], params["password"][0])
   	if resp["status"] == "success"
   	  @sess["email"] = params["email"][0]
   	  @sess["password"] = params["password"][0]
+  	  @sess["userid"] = resp["content"]["id"]
   	  @message = "Logged in"
-  	  @board = @wf.printboardhtml(88858681)
-  	  @form_input = "<a href=\"index.cgi?action=board\">show board<\/a>"
+  	  showgames(@sess["userid"])
   	else
   	  @message = resp.to_s
   	  loginform
