@@ -34,18 +34,18 @@ end
 def showgames(userid)
   loginsession
   @form_input << "<h1>Current games<\/h1>"
-  if not @wf.games(userid).empty?
-    
-    if not @wf.games(userid).select{|game| game["my_turn"] == true}.empty?
+  games = @wf.games(userid)
+  if not games.empty?    
+    if not games.select{|game| game["my_turn"] == true}.empty?
       @form_input << "<h2>My turn<\/h2>"
     end
-    @wf.games(userid).select{|game| game["my_turn"] == true}.each do |game|
+    games.select{|game| game["my_turn"] == true}.each do |game|
       @form_input << "<a href=\"index.cgi?action=board&gameid=" + game["gameid"].to_s + "\">" + "Game against " + game["opponent"].to_s + " (me: " + game["my_score"].to_s + ", opponent: " + game["opponent_score"].to_s + ")<\/a><br>"
     end
-    if not @wf.games(userid).select{|game| game["my_turn"] == false}.empty?
+    if not games.select{|game| game["my_turn"] == false}.empty?
       @form_input << "<h2>Waiting for opponent\'s turn<\/h2>"
     end
-    @wf.games(userid).select{|game| game["my_turn"] == false}.each do |game|
+    games.select{|game| game["my_turn"] == false}.each do |game|
       @form_input << "<a href=\"index.cgi?action=board&gameid=" + game["gameid"].to_s + "\">" + "Game against " + game["opponent"].to_s + " (me: " + game["my_score"].to_s + ", opponent: " + game["opponent_score"].to_s + ")<\/a><br>"
     end
   else

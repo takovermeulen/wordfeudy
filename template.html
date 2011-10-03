@@ -19,13 +19,14 @@
 		
 			div.board { margin-left:-225px; margin-right:auto; margin-bottom:auto; position:relative; left: 50%;}
 			div.row {width: 450px; margin: 0; padding: 0;}
-			div.tile {font-family: 'Varela Round', sans-serif; background-color: white; width: 26px; height: 26px; line-height: 26px; float:left; margin:1px; padding:0px; border: 1px solid black; display:block;-moz-border-radius: 5px; text-align: center;
+			div.tile {font-family: 'Varela Round', sans-serif; font-size: 12pt; background: url('/tile.jpg') no-repeat left top; -webkit-background-size: cover; -moz-background-size: cover; -o-background-size: cover; background-size: cover; width: 26px; height: 26px; line-height: 26px; float:left; margin:1px; padding:0px; border: 1px solid black; display:block;-moz-border-radius: 5px; text-align: center;
 			border-radius: 5px;}
-			div.empty {background-color: darkgray;}
-			div.p3W {background-color: #B1381D;}
-			div.p2W {background-color: #FF8826;}			
-			div.p3L {background-color: #3089FC;}
-			div.p2L {background-color: #93BC95;}
+			div.empty {background-image: none; background-color: #242424;}
+			div.pTW {background-color: #B1381D;}
+			div.pDW {background-color: #FF8826;}			
+			div.pTL {background-color: #3089FC;}
+			div.pDL {background-color: #93BC95;}
+			span.score {visibility: hidden; position: absolute; text-align: left}
 		</style>
 		<title>Wordfeudy</title>
 	</head>
