@@ -4,14 +4,14 @@ require 'mechanize'
 require 'digest/sha1'
 
 class Wordfeud
-  attr_accessor :board, :loggedin, :score_template
+  attr_accessor :board
   def initialize(host = 'game01.wordfeud.com')
     @loggedin = false
     @host = host
     @agent = Mechanize.new
     @games = []
     
-    @score_template = [
+    @multiplier_template = [
     [['TW',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['',''], ['TW',''], ['',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['TW','']], 
     [['',''], ['DW',''], ['',''], ['',''], ['',''], ['TL',''], ['',''], ['',''], ['',''], ['TL',''], ['',''], ['',''], ['',''], ['DW',''], ['','']], 
     [['',''], ['',''], ['DW',''], ['',''], ['',''], ['',''], ['DL',''], ['',''], ['DL',''], ['',''], ['',''], ['',''], ['DW',''], ['',''], ['','']], 
@@ -29,6 +29,18 @@ class Wordfeud
     [['TW',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['',''], ['TW',''], ['',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['TW','']], 
     ]
 
+    @score_template = {
+    "nl" => {'a' => 1, 'g' => 3, 'm' => 3, 's' => 2, 'y' => 8,
+    'b' => 3, 'h' => 4, 'n' => 1,  't' => 2, 'ij' => 4,
+    'c' => 5, 'i' => 1, 'o' => 1, 'u' => 4, 'z' => 4,
+    'd' => 2, 'j' => 4, 'p' => 3, 'v' => 4, 
+    'e' => 1,  'k' => 3, 'q' => '10', 'w' => 5,   
+    'f' => 4, 'l' => 3, 'r' => 2, 'x' => 8},
+    "en" => {'a' => 1, 'e' => 1, 'i' => 1, 'l' => 1, 'n' => 1, 'o' => 1, 'r' => 1, 
+    's' => 1, 't' => 1, 'u' => 1, 'd' => 2, 'g' => 2,
+    'b' => 3, 'c' => 3, 'm' => 3, 'p' => 3, 'f' => 4, 
+    'h' => 4, 'v' => 4, 'w' => 4, 'y' => 4, 'k' => 5, 
+    'j' => 8,  'x' => 8, 'q' => 10, 'z' => 10} }
 
   end
   def login(email, password)
@@ -36,10 +48,6 @@ class Wordfeud
     password = Digest::SHA1.hexdigest(password + 'JarJarBinks9')
     data = {"email" => email, "password" => password}
     response = post(url,data)
-    status = response["status"]
-    if status == "success"
-      @loggedin = true
-    end
     return response
   end
   
@@ -127,12 +135,12 @@ class Wordfeud
         unless col.empty?
           tile = col.find_all{|tiley| tiley[1] == y }
           unless tile.empty?
-            html << "<div class=\"tile " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">" + tile[0][2].to_s + "<span class=\"score\">" + @score_template[x][y][0].to_s + "<\/span><\/div>"
+            html << "<div class=\"tile " + "p" + @multiplier_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">" + tile[0][2].to_s + "<div class=\"score\">" + @score_template["nl"][tile[0][2].downcase].to_s + "<\/div><\/div>"
           else
-            html << "<div class=\"tile empty " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;" + "<span class=\"score\">" + @score_template[x][y][0].to_s + "<\/span><\/div>"
+            html << "<div class=\"tile empty " + "p" + @multiplier_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;" + "<div class=\"multiplier\">" + @multiplier_template[x][y][0].to_s + "<\/div><\/div>"
           end
         else
-            html << "<div class=\"tile empty " + "p" + @score_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;" + "<span class=\"score\">" + @score_template[x][y][0].to_s + "<\/span><\/div>"
+            html << "<div class=\"tile empty " + "p" + @multiplier_template[x][y][0].to_s + "\" id=\"x" + x.to_s + "y" + y.to_s + "\">\&nbsp\;" + "<div class=\"multiplier\">" + @multiplier_template[x][y][0].to_s + "<\/div><\/div>"
         end
       end
       html << "<\/div>"
