@@ -1,5 +1,5 @@
 require 'rubygems'
-
+# hallo
 class Solver
   attr_accessor :wordlist, :board, :multiplier_template
   
