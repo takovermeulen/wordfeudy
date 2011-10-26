@@ -230,7 +230,7 @@ class Solver
         
     return solutions
   end
-  def solutions(letters)
+  def solutions(letters, numberofsolutions = 20)
     solutions = Array.new
     for row in 1..15
       solutions += findboardsolutions(letters,row, :horizontal)
@@ -238,6 +238,6 @@ class Solver
     for col in 1..15
       solutions += findboardsolutions(letters,col, :vertical)
     end
-    return solutions.sort_by{|solution| solution["points"]}.reverse
+    return solutions.sort_by{|solution| solution["points"]}.reverse[0..numberofsolutions-1]
   end
 end
