@@ -29,19 +29,6 @@ class Wordfeud
     [['TW',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['',''], ['TW',''], ['',''], ['',''], ['',''], ['DL',''], ['',''], ['',''], ['TW','']], 
     ]
 
-    @score_template = {
-    "nl" => {'a' => 1, 'g' => 3, 'm' => 3, 's' => 2, 'y' => 8,
-    'b' => 3, 'h' => 4, 'n' => 1,  't' => 2, 'ij' => 4,
-    'c' => 5, 'i' => 1, 'o' => 1, 'u' => 4, 'z' => 4,
-    'd' => 2, 'j' => 4, 'p' => 3, 'v' => 4, 
-    'e' => 1,  'k' => 3, 'q' => '10', 'w' => 5,   
-    'f' => 4, 'l' => 3, 'r' => 2, 'x' => 8},
-    "en" => {'a' => 1, 'e' => 1, 'i' => 1, 'l' => 1, 'n' => 1, 'o' => 1, 'r' => 1, 
-    's' => 1, 't' => 1, 'u' => 1, 'd' => 2, 'g' => 2,
-    'b' => 3, 'c' => 3, 'm' => 3, 'p' => 3, 'f' => 4, 
-    'h' => 4, 'v' => 4, 'w' => 4, 'y' => 4, 'k' => 5, 
-    'j' => 8,  'x' => 8, 'q' => 10, 'z' => 10} }
-
   end
   def login(email, password)
     url = "/wf/user/login/email/"
@@ -107,22 +94,27 @@ class Wordfeud
      board = game(gameid)["tiles"]
   end 
   
-  def printboard(gameid)
+  def board_array(gameid)
     board = board(gameid)
+    boardarray = Array.new
     for y in 0..14
-      for x in 0..14
+      tmp = Array.new
+      for x in 0..14  
         col = board.find_all{|tilex| tilex[0] == x }
         unless col.empty?
           tile = col.find_all{|tiley| tiley[1] == y }
           unless tile.empty?
-            print tile[0][2] + ' '
+            tmp << [tile[0][2].downcase, false] 
           else
-            print '.' + ' '
+            tmp << ["",false]
           end
+        else
+          tmp << ["",false]
         end
       end
-      print "\n"
-    end    
+      boardarray << tmp
+    end
+    return boardarray    
   end
   
   def printboardhtml(gameid)
