@@ -90,11 +90,11 @@ class Solver
     # get score
     wordlist.each{|solution|
       points = 0
+      
       #get score of solution word
-
       points += calcpoints(solution)
+      
       #get score of other words
-
       findwordsinsolution(solution).each{|solution_word|
 
           points += calcpoints(solution_word)
@@ -123,7 +123,7 @@ class Solver
           x = solution["x"]
           y = newchar["index"] + solution["y"]
       end
-      
+
       case @multiplier_template[x-1][y-1][0]
         when "DL"
           points += @scores["nl"][newchar["letter"]]
@@ -165,7 +165,7 @@ class Solver
         foundword = Hash.new
         foundword["word"] = newword["word"]
         foundword["in_dictionary"] =  @wordlist.include?(newword["word"])
-        foundword["newchars"] = [{"index" => y-1, "letter" => newchar["letter"]}]
+        foundword["newchars"] = [{"index" => (y-1) - newword["start_index"], "letter" => newchar["letter"]}]
         case direction
           when :horizontal
             foundword["x"] = x+newchar["index"]
