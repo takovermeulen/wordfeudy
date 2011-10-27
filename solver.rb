@@ -18,8 +18,8 @@ class Solver
           @wordlist << word.downcase.chomp
         end
     end
-    # remove words with non-letter characters from dictionary
-    @wordlist.delete_if {|word| word =~ /[^a-zA-Z]/}
+    # remove words with non-letter characters or upper case characters from dictionary
+    @wordlist.delete_if {|word| word =~ /[^a-z]/}
   end
   
   def getline(number, direction, board = @board)
@@ -35,8 +35,12 @@ class Solver
 
     wordlist = Array.new
     characters = getline(line, direction)
-
+    
+    # skip line if it has no chars
+    unless characters.count("") == 15
+    
     for position in 0..13
+        
       for length in 2..15-position
         #check if characters on board for this sequence
         
@@ -80,13 +84,17 @@ class Solver
         end
       end
     end
+    end
 
-    # check if words in dictionary -> move to final loop
-    # make solutions unique
+    
+    # make solutions unique and check related words
     wordlist.uniq!
-    wordlist.select! {|solution|
-      findwordsinsolution(solution).map {|word| word["in_dictionary"]}.count(false) == 0
-    }
+    wordlist.each {|solution| solution["relatedwords"] = findwordsinsolution(solution)}
+    wordlist.select! {|solution| 
+      solution["relatedwords"].map {|word| word["in_dictionary"]}.count(false) == 0
+      }
+    
+    
     # get score
     wordlist.each{|solution|
       points = 0
@@ -95,10 +103,10 @@ class Solver
       points += calcpoints(solution)
       
       #get score of other words
-      findwordsinsolution(solution).each{|solution_word|
+      solution["relatedwords"].each{|solution_word|
 
           points += calcpoints(solution_word)
-        }
+       }
       solution["points"] = points
       
     }
@@ -182,6 +190,8 @@ class Solver
       
     # returns a) all words in other directions for each new char, b) x and y for the start of word, c) direction and 
     # d) index of new letter and e) whether those words are in the dict
+    
+
     return words
 
   end
