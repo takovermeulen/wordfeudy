@@ -4,11 +4,11 @@ class Solver
   attr_accessor :wordlist, :board, :multiplier_template
 
   def initialize(board, multiplier_template)
-    @scores = {"nl" => {'a' => 1,   'g' => 3,   'm' => 3,   's' => 2,   'y' => 8,
-    'b' => 3,   'h' => 4,   'n' => 1,    't' => 2,
+    @scores = {"nl" => {'a' => 1,   'g' => 3,   'm' => 3,   's' => 2,   'y' => 8, '?' => 0,
+    'b' => 4,   'h' => 4,   'n' => 1,    't' => 2,
     'c' => 5,   'i' => 1,   'o' => 1,   'u' => 4,   'z' => 4,
     'd' => 2,   'j' => 4,   'p' => 3,   'v' => 4,   
-    'e' => 1,    'k' => 3,   'q' => '10',   'w' => 5,       
+    'e' => 1,    'k' => 3,   'q' => 10,   'w' => 5,       
     'f' => 4,   'l' => 3,   'r' => 2,   'x' => 8}}
     @multiplier_template = multiplier_template
     @board = board
@@ -32,7 +32,7 @@ class Solver
   end
 
   def findboardsolutions(letters, line, direction)
-
+    print "Finding solutions in line " + line.to_s + ", direction " + direction.to_s + ". "
     wordlist = Array.new
     characters = getline(line, direction)
     
@@ -61,25 +61,24 @@ class Solver
         next if characters[position..position+length-1].count("") == 0
         
         #if ok, calc permutations with letters and chars on fixed position
-        findsolutions(letters, characters[position..position+length-1]).each do |solution|
+        findsolutions(letters, characters[position..position+length-1]).each do |sol|
+          solution = sol["word"]
           #get newchars
           newchars = Array.new 
           solution.split(//).each_index{|index|
             unless solution.split(//)[index] == characters[position..position+length-1][index]
               newchars << {"letter" => solution.split(//)[index], "index" => index} 
             end
-            }
-            
+            }    
           case direction
           when :horizontal
             x = position + 1
             y = line
-
-              wordlist << {"word"=> solution, "x"=> x, "y" => y, "direction" => :horizontal, "newchars" => newchars}
+              wordlist << {"word"=> solution, "x"=> x, "y" => y, "direction" => :horizontal, "newchars" => newchars, "unknowns" => sol["unknowns"]}
           when :vertical
             x = line
             y = position + 1
-              wordlist << {"word" => solution, "x" => x, "y" => y, "direction" => :vertical, "newchars" => newchars}
+              wordlist << {"word" => solution, "x" => x, "y" => y, "direction" => :vertical, "newchars" => newchars, "unknowns" => sol["unknowns"]}
           end
         end
       end
@@ -93,10 +92,11 @@ class Solver
     wordlist.select! {|solution| 
       solution["relatedwords"].map {|word| word["in_dictionary"]}.count(false) == 0
       }
-    
+    print wordlist.count.to_s + " solution(s) found\n"
     
     # get score
     wordlist.each{|solution|
+
       points = 0
       
       #get score of solution word
@@ -104,34 +104,40 @@ class Solver
       
       #get score of other words
       solution["relatedwords"].each{|solution_word|
-
           points += calcpoints(solution_word)
        }
       solution["points"] = points
-      
     }
     return wordlist
   end
   
-  def calcpoints(solution)
+  def calcpoints(calcsol)
+
+    # integrate unknowns in solution for calculating points
+    calcsol["unknowns"].each {|unknowns_index| 
+      calcsol["word"][unknowns_index] = "?"
+      calcsol["newchars"][calcsol["newchars"].map{|newchar| newchar["index"]}.find_index(unknowns_index)]["letter"] = "?"
+    }
+    
+    #calc points
     points = 0
     multiplier = 1
-    solution["word"].split(//).each {|char|
+    calcsol["word"].split(//).each {|char|
       points += @scores["nl"][char]
       }
 
-    solution["newchars"].each {|newchar|
+    calcsol["newchars"].each {|newchar|
+
       x = 0
       y = 0
-      case solution["direction"]
+      case calcsol["direction"]
         when :horizontal
-          x = newchar["index"] + solution["x"]
-          y = solution["y"]
+          x = newchar["index"] + calcsol["x"]
+          y = calcsol["y"]
         when :vertical
-          x = solution["x"]
-          y = newchar["index"] + solution["y"]
+          x = calcsol["x"]
+          y = newchar["index"] + calcsol["y"]
       end
-
       case @multiplier_template[x-1][y-1][0]
         when "DL"
           points += @scores["nl"][newchar["letter"]]
@@ -183,15 +189,16 @@ class Solver
             foundword["y"] = x+newchar["index"]
             foundword["x"] = newword["start_index"] + 1
             foundword["direction"] = :horizontal  
+          end
+          if solution["unknowns"].include?(newchar["index"]) == true
+            foundword["unknowns"] = [(y-1) - newword["start_index"]]
+          else
+            foundword["unknowns"] = []
           end 
         words << foundword
       end
     end
       
-    # returns a) all words in other directions for each new char, b) x and y for the start of word, c) direction and 
-    # d) index of new letter and e) whether those words are in the dict
-    
-
     return words
 
   end
@@ -216,30 +223,54 @@ class Solver
   end
 
   def findsolutions(letters, format)
-    #build regex
-    requiredregex = ""
-    format.each do |char|
-      if char != ""
-        requiredregex = requiredregex + char
-      else
-        requiredregex = requiredregex + "[" + letters + "]?"
-      end
-    end
-    requiredregex = Regexp.new("^" + requiredregex + "$")
+    regexarray = Array.new
     
-    #find solutions  
-    solutions = @wordlist.grep(requiredregex)
-    # check length of solution
-    solutions.select!{|solution| solution.length == format.count}
-    #remove solutions with too much letters
-    solutions.select!{|solution| 
-      ok = true
-      letters.split(//).each {|letter| ok = false if (solution.count(letter) - format.count(letter)) > letters.count(letter)}
+    # handle unknowns
+    for i in 0..[letters.count("?"), format.count("")].min
+      temparr = Array.new
+      (format.count("") - i).times { temparr << "[" + letters.delete("?") + "]"}
+      i.times {temparr << "[a-z]"}
+      regexarray += temparr.permutation.to_a
+      next
+    end
 
-      ok }
-        
-    return solutions
+    regexarray = regexarray.uniq
+
+    format.each_index do |char_index|
+        regexarray.each {|arr|
+          arr.insert(char_index, format[char_index])
+        } if format[char_index] != ""
+    end
+    
+    solutions = Array.new
+    regexarray.each {|regex|
+      temp_solutions = Array.new
+      requiredregex = Regexp.new("^" + regex.join + "$")
+    
+      #find solutions  
+      temp_solutions = @wordlist.grep(requiredregex)
+      #check length of solution
+      temp_solutions.select!{|solution| solution.length == format.count}
+    
+      #remove solutions with too much letters
+      temp_solutions.select!{|solution| 
+        ok = true
+        letters.split(//).each {|letter| ok = false if (solution.count(letter) - format.count(letter)) > letters.count(letter)}
+        ok }
+      
+      #find unknowns in solution
+      unknowns_index = Array.new
+      regex.each_index{|re_index| unknowns_index << re_index if regex[re_index] == "[a-z]"}
+      
+      temp_solutions.map! {|sol|
+        {"word"=> sol, "unknowns" => unknowns_index}}
+      solutions += temp_solutions
+    }
+      
+    return solutions.uniq  
+ 
   end
+  
   def solutions(letters, numberofsolutions = 20)
     solutions = Array.new
     for row in 1..15
