@@ -278,7 +278,7 @@ class Solver
   
   def solutions(letters, numberofsolutions = 20)
     solutions = Array.new
-    for row in 15..15
+    for row in 1..15
       solutions += findboardsolutions(letters,row, :horizontal)
     end
     for col in 1..15
