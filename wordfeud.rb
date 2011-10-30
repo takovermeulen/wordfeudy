@@ -28,11 +28,11 @@ class Wordfeud
       [[''], ['DL'], [''], [''], [''], ['TL'], [''], [''], [''], ['TL'], [''], [''], [''], ['DL'], ['']], 
       [['TL'], [''], [''], [''], ['TW'], [''], [''], ['DL'], [''], [''], ['TW'], [''], [''], [''], ['TL']],
       ]
-    @score_template = {"nl" => {'a' => 1,   'g' => 3,   'm' => 3,   's' => 2,   'y' => 8, '?' => 0,
+    @score_template =   {"nl" => {'a' => 1,   'g' => 3,   'm' => 3,   's' => 2,   'y' => 8, '?' => 0,
     'b' => 4,   'h' => 4,   'n' => 1,    't' => 2,
-    'c' => 5,   'i' => 1,   'o' => 1,   'u' => 4,   'z' => 4,
-    'd' => 2,   'j' => 4,   'p' => 3,   'v' => 4,   
-    'e' => 1,    'k' => 3,   'q' => 10,   'w' => 5,       
+    'c' => 5,   'i' => 2,   'o' => 1,   'u' => 2,   'z' => 5,
+    'd' => 2,   'j' => 4,   'p' => 4,   'v' => 4,
+    'e' => 1,    'k' => 3,   'q' => 10,   'w' => 5,
     'f' => 4,   'l' => 3,   'r' => 2,   'x' => 8}}
 
   end
@@ -78,15 +78,13 @@ class Wordfeud
   def move(gameid, tiles, ruleset = 2)
     url = '/wf/game/' + gameid.to_s + '/move/'
     data = {"ruleset" => ruleset, "move" => tiles}
+    puts data
     res = post(url, data) 
 
   end
   
-  def playsolutions(gameid, solutions)
-  # assume they are sorted by points
-  solutions.each{|sol|
-    puts "Playing " + sol.to_s
-    move = Array.new
+  def playsolution(gameid, sol)
+    tiles = Array.new
     sol["newchars"].each {|newchar|
       case sol["direction"]
         when :horizontal
@@ -101,14 +99,11 @@ class Wordfeud
       else
         unknown = false
       end
-      move << [x, y, newchar["letter"].upcase, unknown]
+      tiles << [x, y, newchar["letter"].upcase, unknown]
       }
+
+    res = move(gameid, tiles)
     
-    puts move.to_s
-    result = move(gameid, move)
-    puts result.to_s
-    break if result["status"] != "error"  
-    }
   end
   
   def board(gameid)

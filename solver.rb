@@ -6,8 +6,8 @@ class Solver
   def initialize(board, multiplier_template)
     @scores = {"nl" => {'a' => 1,   'g' => 3,   'm' => 3,   's' => 2,   'y' => 8, '?' => 0,
     'b' => 4,   'h' => 4,   'n' => 1,    't' => 2,
-    'c' => 5,   'i' => 1,   'o' => 1,   'u' => 4,   'z' => 4,
-    'd' => 2,   'j' => 4,   'p' => 3,   'v' => 4,   
+    'c' => 5,   'i' => 2,   'o' => 1,   'u' => 2,   'z' => 5,
+    'd' => 2,   'j' => 4,   'p' => 4,   'v' => 4,   
     'e' => 1,    'k' => 3,   'q' => 10,   'w' => 5,       
     'f' => 4,   'l' => 3,   'r' => 2,   'x' => 8}}
     @multiplier_template = multiplier_template
@@ -35,16 +35,19 @@ class Solver
     print "Finding solutions in line " + line.to_s + ", direction " + direction.to_s + ". "
     wordlist = Array.new
     characters = getline(line, direction)
-    
-    # skip line if it has no chars
-    unless characters.count("") == 15
-    
+
     for position in 0..13
         
       for length in 2..15-position
-        #check if characters on board for this sequence
+        #check if characters on board for this sequence. also check one line above and below
         
-        next if characters[position..position+length-1].count("") == length
+        if characters[position..position+length-1].count("") == length
+          if getline([line - 1, 1].max, direction)[position..position+length-1].count("") == length
+            if getline([line + 1, 15].min, direction)[position..position+length-1].count("") == length
+              next
+            end
+          end
+        end
         
         #check if place before word is empty or out of board
         unless (position - 1) < 0
@@ -82,7 +85,7 @@ class Solver
           end
         end
       end
-    end
+
     end
 
     
@@ -92,7 +95,7 @@ class Solver
     wordlist.select! {|solution| 
       solution["relatedwords"].map {|word| word["in_dictionary"]}.count(false) == 0
       }
-    print wordlist.count.to_s + " solution(s) found\n"
+    
     
     # get score
     wordlist.each{|solution|
@@ -108,22 +111,20 @@ class Solver
        }
       solution["points"] = points
     }
+    
+    print wordlist.count.to_s + " solution(s) found. Points in best solution: " + wordlist.map{|sol| sol["points"]}.max.to_s + "\n"
     return wordlist
   end
   
   def calcpoints(calcsol)
 
-    # integrate unknowns in solution for calculating points
-    calcsol["unknowns"].each {|unknowns_index| 
-      calcsol["word"][unknowns_index] = "?"
-      calcsol["newchars"][calcsol["newchars"].map{|newchar| newchar["index"]}.find_index(unknowns_index)]["letter"] = "?"
-    }
-    
     #calc points
     points = 0
     multiplier = 1
-    calcsol["word"].split(//).each {|char|
-      points += @scores["nl"][char]
+    calcsol["word"].split(//).each_index {|charindex|
+      unless calcsol["unknowns"].include?(charindex) == true
+        points += @scores["nl"][calcsol["word"][charindex]]
+      end
       }
 
     calcsol["newchars"].each {|newchar|
@@ -140,9 +141,13 @@ class Solver
       end
       case @multiplier_template[x-1][y-1][0]
         when "DL"
-          points += @scores["nl"][newchar["letter"]]
+          unless calcsol["unknowns"].include?(newchar["index"]) == true
+            points += @scores["nl"][newchar["letter"]]
+          end
         when "TL"
-          points += 2 * @scores["nl"][newchar["letter"]]
+          unless calcsol["unknowns"].include?(newchar["index"]) == true
+            points += 2 * @scores["nl"][newchar["letter"]]
+          end
         when "DW"
           multiplier = multiplier * 2
         when "TW"
@@ -273,7 +278,7 @@ class Solver
   
   def solutions(letters, numberofsolutions = 20)
     solutions = Array.new
-    for row in 1..15
+    for row in 15..15
       solutions += findboardsolutions(letters,row, :horizontal)
     end
     for col in 1..15
