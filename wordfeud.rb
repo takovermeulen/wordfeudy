@@ -1,14 +1,15 @@
 require 'rubygems'
 require 'json'
+gem 'mechanize', '=1.0.0' # !! only mechanize 1.0.0 works due to timeout problem in 2.0.1
 require 'mechanize'
 require 'digest/sha1'
 
 class Wordfeud
-  attr_accessor :board
+  attr_accessor :board, :multiplier_template
   def initialize(host = 'game01.wordfeud.com')
     @loggedin = false
     @host = host
-    @agent = Mechanize.new
+    @agent = Mechanize.new   
     @games = []
     
     @multiplier_template = [
@@ -78,12 +79,11 @@ class Wordfeud
   def move(gameid, tiles, ruleset = 2)
     url = '/wf/game/' + gameid.to_s + '/move/'
     data = {"ruleset" => ruleset, "move" => tiles}
-    puts data
     res = post(url, data) 
 
   end
   
-  def playsolution(gameid, sol)
+  def solutiontotiles(sol)
     tiles = Array.new
     sol["newchars"].each {|newchar|
       case sol["direction"]
@@ -99,10 +99,10 @@ class Wordfeud
       else
         unknown = false
       end
-      tiles << [x, y, newchar["letter"].upcase, unknown]
+      tiles << [x,y,newchar["letter"].upcase,unknown]
       }
 
-    res = move(gameid, tiles)
+    return tiles
     
   end
   
