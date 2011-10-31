@@ -284,6 +284,6 @@ class Solver
     for col in 1..15
       solutions += findboardsolutions(letters,col, :vertical)
     end
-    return solutions.sort_by{|solution| solution["points"]}.reverse[0..[numberofsolutions-1, solutions.count].min]
+    return solutions.sort_by{|solution| solution["points"]}.reverse[0..numberofsolutions-1]
   end
 end
