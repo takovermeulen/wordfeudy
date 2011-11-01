@@ -32,7 +32,7 @@ def loginsession
   @wf.login(@sess["email"], @sess["password"])
 end
 
-def showgames(userid, showplaybutton = false)
+def showgames(userid)
   loginsession
   @form_input << "<h1>Current games<\/h1>"
   games = @wf.games(userid)
@@ -52,17 +52,15 @@ def showgames(userid, showplaybutton = false)
   else
     @form_input << "No currently active games found"
   end
-  if showplaybutton == true
-    @form_input << "<h2>Solver<\/h2>"
-    @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + game["gameid"].to_s + "\">" + "Autoplay" + "<\/a><br>"
-  end
 end
 
 case params["action"][0] 
 	when "board"
     loginsession
 	  @board = @wf.printboardhtml(params["gameid"][0])  
-	  showgames(@sess["userid"], true)
+	  showgames(@sess["userid"])
+	  @form_input << "<h2>Solver<\/h2>"
+    @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + params["gameid"][0].to_s + "\">" + "Autoplay" + "<\/a><br>"
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
