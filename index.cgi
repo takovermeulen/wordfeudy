@@ -64,7 +64,7 @@ case params["action"][0]
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
-    game = params["gameid"][0]
+    game = params["gameid"]
     currentboard = @wf.board_array(game)
     letters = @wf.letters(game)
 
