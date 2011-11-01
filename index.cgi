@@ -4,6 +4,7 @@ require 'cgi/session'
 require 'rubygems'
 require 'cgi_exception'
 require_relative 'wordfeud.rb'
+require_relative 'solver.rb'
 require 'erb'
 
 cgi = CGI.new
@@ -31,7 +32,7 @@ def loginsession
   @wf.login(@sess["email"], @sess["password"])
 end
 
-def showgames(userid)
+def showgames(userid, showplaybutton = false)
   loginsession
   @form_input << "<h1>Current games<\/h1>"
   games = @wf.games(userid)
@@ -51,15 +52,34 @@ def showgames(userid)
   else
     @form_input << "No currently active games found"
   end
+  if showplaybutton = true
+    @form_input << "<h2>Solver<\/h2>"
+    @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + game["gameid"].to_s + "\">" + "Autoplay" + "<\/a><br>"
 end
 
 case params["action"][0] 
 	when "board"
     loginsession
 	  @board = @wf.printboardhtml(params["gameid"][0])  
-	  showgames(@sess["userid"])
+	  showgames(@sess["userid"], true)
 	when "games"
 	  showgames(@sess["userid"])
+  when "autplay"
+    game = params["gameid"][0]
+    letters = wf.letters(game)
+
+    @sol = Solver.new(currentboard, wf.multiplier_template)
+    solutions = @sol.solutions(letters, 50)
+
+    response = Hash.new
+    solutions.each{|soltoplay|
+      puts "Trying playing: " +  soltoplay["word"] + " for " + soltoplay["points"].to_s + " points."
+      response = wf.move(game, wf.solutiontotiles(soltoplay))
+      break if response["status"] != "error"
+      @form_input << response["content"]["type"]
+      }
+    @form_input <<  "Played solution " + response["content"]["main_word"].downcase + " for " + response["content"]["points"].to_s + " points."
+    
   when "login"
     @wf = Wordfeud.new
   	resp = @wf.login(params["email"][0], params["password"][0])
