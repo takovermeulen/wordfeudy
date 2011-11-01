@@ -64,9 +64,7 @@ case params["action"][0]
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
-    email = # email address of wordfeud account
-    password = # password
-
+    game = params["gameid"][0]
     currentboard = @wf.board_array(game)
     letters = @wf.letters(game)
 
