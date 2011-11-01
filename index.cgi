@@ -52,9 +52,10 @@ def showgames(userid, showplaybutton = false)
   else
     @form_input << "No currently active games found"
   end
-  if showplaybutton = true
+  if showplaybutton == true
     @form_input << "<h2>Solver<\/h2>"
     @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + game["gameid"].to_s + "\">" + "Autoplay" + "<\/a><br>"
+  end
 end
 
 case params["action"][0] 
@@ -64,7 +65,7 @@ case params["action"][0]
 	  showgames(@sess["userid"], true)
 	when "games"
 	  showgames(@sess["userid"])
-  when "autplay"
+  when "autoplay"
     game = params["gameid"][0]
     letters = wf.letters(game)
 
@@ -73,7 +74,6 @@ case params["action"][0]
 
     response = Hash.new
     solutions.each{|soltoplay|
-      puts "Trying playing: " +  soltoplay["word"] + " for " + soltoplay["points"].to_s + " points."
       response = wf.move(game, wf.solutiontotiles(soltoplay))
       break if response["status"] != "error"
       @form_input << response["content"]["type"]
