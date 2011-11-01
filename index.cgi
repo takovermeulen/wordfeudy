@@ -64,15 +64,18 @@ case params["action"][0]
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
-    game = params["gameid"][0]
-    letters = wf.letters(game)
+    email = # email address of wordfeud account
+    password = # password
 
-    @sol = Solver.new(currentboard, wf.multiplier_template)
+    currentboard = @wf.board_array(game)
+    letters = @wf.letters(game)
+
+    @sol = Solver.new(currentboard, @wf.multiplier_template)
     solutions = @sol.solutions(letters, 50)
 
     response = Hash.new
     solutions.each{|soltoplay|
-      response = wf.move(game, wf.solutiontotiles(soltoplay))
+      response = @wf.move(game, @wf.solutiontotiles(soltoplay))
       break if response["status"] != "error"
       @form_input << response["content"]["type"]
       }
