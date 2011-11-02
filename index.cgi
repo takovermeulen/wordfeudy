@@ -60,26 +60,26 @@ case params["action"][0]
 	  @board = @wf.printboardhtml(params["gameid"][0])  
 	  showgames(@sess["userid"])
 	  @form_input << "<h2>Solver<\/h2>"
-    @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + params["gameid"][0].to_s + "\">" + "Autoplay" + "<\/a><br>"
+    @form_input << "<a href=\"index.cgi?action=autoplay&gameid=" + params["gameid"][0].to_s + "\">" + "Autoplay (takes a while...)" + "<\/a><br>"
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
+    loginsession
     game = params["gameid"][0]
-    @form_input << game
-    #letters = @wf.letters(game)
-    #currentboard = @wf.board_array(game)
+    
+    letters = @wf.letters(game)
+    currentboard = @wf.board_array(game)
 
+    @sol = Solver.new(currentboard, @wf.multiplier_template)
+    solutions = @sol.solutions(letters, 50)
 
-    #@sol = Solver.new(currentboard, @wf.multiplier_template)
-    #solutions = @sol.solutions(letters, 50)
-
-    #response = Hash.new
-    #solutions.each{|soltoplay|
-      #response = @wf.move(game, @wf.solutiontotiles(soltoplay))
-      #break if response["status"] != "error"
-      #@form_input << response["content"]["type"]
-      #}
-    #@form_input <<  "Played solution " + response["content"]["main_word"].downcase + " for " + response["content"]["points"].to_s + " points."
+    response = Hash.new
+    solutions.each{|soltoplay|
+      response = @wf.move(game, @wf.solutiontotiles(soltoplay))
+      break if response["status"] != "error"
+      @form_input << response["content"]["type"]
+      }
+    @form_input <<  "Played solution " + response["content"]["main_word"].downcase + " for " + response["content"]["points"].to_s + " points."
     
   when "login"
     @wf = Wordfeud.new
