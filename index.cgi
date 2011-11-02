@@ -64,20 +64,22 @@ case params["action"][0]
 	when "games"
 	  showgames(@sess["userid"])
   when "autoplay"
-    game = params["gameid"]
-    currentboard = @wf.board_array(game)
-    letters = @wf.letters(game)
+    game = params["gameid"][0]
+    @form_input << game
+    #letters = @wf.letters(game)
+    #currentboard = @wf.board_array(game)
 
-    @sol = Solver.new(currentboard, @wf.multiplier_template)
-    solutions = @sol.solutions(letters, 50)
 
-    response = Hash.new
-    solutions.each{|soltoplay|
-      response = @wf.move(game, @wf.solutiontotiles(soltoplay))
-      break if response["status"] != "error"
-      @form_input << response["content"]["type"]
-      }
-    @form_input <<  "Played solution " + response["content"]["main_word"].downcase + " for " + response["content"]["points"].to_s + " points."
+    #@sol = Solver.new(currentboard, @wf.multiplier_template)
+    #solutions = @sol.solutions(letters, 50)
+
+    #response = Hash.new
+    #solutions.each{|soltoplay|
+      #response = @wf.move(game, @wf.solutiontotiles(soltoplay))
+      #break if response["status"] != "error"
+      #@form_input << response["content"]["type"]
+      #}
+    #@form_input <<  "Played solution " + response["content"]["main_word"].downcase + " for " + response["content"]["points"].to_s + " points."
     
   when "login"
     @wf = Wordfeud.new
