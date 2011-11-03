@@ -104,7 +104,6 @@ class Solver
       
       #get score of solution word
       points += calcpoints(solution)
-      points += 40 if solution["newchars"].count == 7
       
       #get score of other words
       solution["relatedwords"].each{|solution_word|
