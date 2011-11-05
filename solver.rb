@@ -63,8 +63,7 @@ class Solver
   def findsolutionsinline(letters, line, direction)
     print "Finding solutions in line " + line.to_s + ", direction " + direction.to_s + ". "
     solutions = Array.new
-    characters = getline(line, direction)
-    puts getmatches(characters)
+    matches = getmatches(getline(line, direction))
     # check where solution fits
     
     # get newchars
@@ -74,63 +73,49 @@ class Solver
     return solutions
   end
   
-  def buildregex(characters, letters)
-    regex = ""
-    # build regex
-    regexarr = Array.new
-    matches = Array.new
-    characters.each_index {|i| characters[i] = " " if characters[i].empty?}
-    characters = characters.join.scan(/[a-z]*/)[0..-2]
-    characters.each_index {|i| matches << [characters[i], i] if !characters[i].empty? }
-    newmatches = Array.new
-    matches.each_index {|i| 
-      if i == (matches.count - 1) and i == 0
-       newmatches[i] = [matches[i][1], matches[i][0], (characters.count - matches[i][1]) - 1]
-      elsif i == 0
-        newmatches[i] = [matches[i][1], matches[i][0], (matches[i+1][1] - matches[i][1]) -1]
-      elsif i == (matches.count - 1)
-        newmatches[i] = [(matches[i][1] - matches[i-1][1]) - 1, matches[i][0], (characters.count - matches[i][1]) - 1]
-      else
-        newmatches[i] = [(matches[i][1] - matches[i-1][1]) - 1, matches[i][0], (matches[i+1][1] - matches[i][1]) - 1]
-      end
-      }
-    matches = newmatches
-    for i in 0..(matches.count - 1)
-      if i == (matches.count - 1) and i == 0
-        regexarr << ".\{0," + matches[i][0].to_s + "\}" + matches[i][1] + ".\{0," + (matches[i][2]).to_s + "\}"
-      elsif i == 0
-        regexarr << ".\{0," + matches[i][0].to_s + "\}" + matches[i][1] + ".\{0," + (matches[i][2] - 1).to_s + "\}"
-      elsif i == (matches.count - 1)
-        regexarr << ".\{0," + (matches[i][0] -1 ).to_s + "\}" + matches[i][1] + ".\{0," + (matches[i][2]).to_s + "\}"
-      else
-        regexarr << ".\{0," + (matches[i][0] - 1).to_s + "\}" + matches[i][1] + ".\{0," + (matches[i][2] - 1).to_s + "\}"
-      end
-    end
-    
-    return matches
-    #return regex
-  end
   
   def getmatches(characters, letters)
+    letters = letters.split(//)
     matches = Array.new
+    permutations = Hash.new
+    characters.each_index{|i| characters[i] = " " if characters[i].empty?}
+   
+    #calc permutations
+    for i in 1..letters.count
+      permutations[i] = letters.permutation(i).to_a.uniq
+    end
     
-    puts buildregex(characters, letters).to_s
+    #find matches where permutations fit
+    for numchars in 2..([letters.count, characters.count(" ")].min)
+      permutations[numchars].each { |perm|
+        for pos in 0..(characters.count - 1)
+          next if characters[pos - 1] != " " unless (pos -1) < 0
+          newchars = characters[pos, characters.count]
+          j = 0
+          newchars.each_index{|i|
+            if newchars[i] == " "
+              newchars[i] = perm[j] 
+              j += 1
+            end
+            break if perm.count == j
+          }
+          word = newchars.join.split(/ /).first
+          next if j != perm.count
+          next if word.length <= perm.count
+          matches << {"word" => newchars.join.split(/ /).first, "i" => pos} if (word.length > 1)
+        end  
+      }
+    end
+    #find matches in dictionairies
+    okmatches = matches.map{|m| m["word"]}.uniq & (@wordlist + @custom_wordlist)
+    matches.select! {|m| okmatches.include?(m["word"])}
     
-    #requiredregex = Regexp.new("^" + regex.join + "$")
-
-    #find solutions  
-    #solutions = @wordlist.grep(requiredregex)
-       
-    #check length of solution
-    #solutions.select!{|solution| solution.length < 16}
-
-    #remove solutions with too much letters
-    #solutions.select!{|solution| 
-    #  ok = true
-    #  letters.split(//).uniq.each {|letter| ok = false if (solution.count(letter) - letters.count(letter)) > letters.count(letter)}
-    #  ok }
-
-    #return solutions.uniq    
+    matches.each {|m|
+      newchars = Array.new
+      m["word"].split(//).each_index {|i| newchars << {"letter" => m["word"].split(//)[i], "index" => i} unless characters[m["i"] + i] == m["word"].split(//)[i]}
+      m["newchars"] = newchars
+    }
+    return matches
   end
 
   

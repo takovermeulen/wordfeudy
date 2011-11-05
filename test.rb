@@ -10,8 +10,7 @@ letters = "dgdnbra"
 @sol = Solver.new(currentboard, wf.multiplier_template)
 #solutions = @sol.solutions(letters, 50)
 
-puts @sol.getmatches(["", "","", "s","","","d","e","","","f","s","","a",""], "abc")
-#puts @sol.getmatches(["", "",""], "abc")
+puts @sol.getmatches(["", "","", "s","","","d","e","","","","s","","","a"], "test")
 
 
 
