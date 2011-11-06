@@ -13,72 +13,121 @@ class Solver
     @multiplier_template = multiplier_template
     @board = board
     
-    #read custom dict with valid board words
-    @custom_wordlist = File.open("custom_dict.txt", "rb") {|f| f.read}.split("\n").map {|word| word.chomp.downcase}
+    #read custom dict with valid board words played earlier
+    custom_wordlist = File.open("custom_dict.txt", "rb") {|f| f.read}.split("\n").map {|word| word.chomp.downcase}
  
     # read board and add to custom dictionary if it contains new words 
-    File.open("custom_dict.txt", 'a') {|f| f.puts(findboardwords - @custom_wordlist)}
-     
+    newwords = findboardwords()
+    File.open("custom_dict.txt", 'a') {|f| f.puts(newwords - custom_wordlist)}
+    
     # read dictionary (already a clean lowercase file)
-    @wordlist = File.open("dict.txt", "rb") {|f| f.read}.split("\n")
+    @wordlist = File.open("dict.txt", "rb") {|f| f.read}.split("\n")   
+    
+    # add board words to current dictionary and remove any duplicates
+    @wordlist += newwords
+    @wordlist.uniq! 
   end
   
   def findboardwords(lines = (1..15).to_a, directions = [:horizontal, :vertical])
     words = Array.new
     directions.each{|dir| 
-      case dir
-      when :horizontal
       lines.each{|line|
-        wordsinline = @board[line - 1].map{|char| if char[0].empty? then " " else char[0] end}.join.split(" ")
+        wordsinline = getline(line, dir, true)
+        wordsinline = wordsinline.join.split(" ")
         wordsinline.each{|word| words << word.downcase if word.length > 1}
-        }
-      when :vertical
-        lines.each{|line|
-          wordsinline = @board.transpose[line - 1].map{|char| if char[0].empty? then " " else char[0] end}.join.split(" ")
-          wordsinline.each{|word| words << word.downcase if word.length > 1}
-        }
-      end
+      }
     }
     return words
   end
   
-  def checkwords(words)
-    if ((@wordlist + @custom_wordlist) & words).count == words.count
-      return true
-    else
-      return false
+  def findwordaroundchar(line, direction, index, newchar)
+    # get chars in line
+    characters = getline(line, direction)
+    characters[index] = newchar
+    relatedword = Hash.new
+    word = ""
+    
+    # search for word
+    (index - 1).downto(0) { |i|
+      break if characters[i].empty?
+      word += characters[i] } unless index == 0
+       
+    relatedword["start_index"] = word.length
+    word = word.reverse + newchar
+    
+    (index + 1).upto(14) {|i|
+      break if characters[i].empty?
+      word += characters[i] } unless index == 14
+    
+    # write details of solution to hash
+    case direction
+      when :horizontal
+        relatedword["x"] = (index - relatedword["start_index"]) + 1
+        relatedword["y"] = line
+      when :vertical
+        relatedword["x"] = line
+        relatedword["y"] = (index - relatedword["start_index"]) + 1
     end
+    
+    # set details of found related solution
+    relatedword["direction"] = direction
+    relatedword["word"] = word
+    relatedword["in_dictionary"] = @wordlist.include?(word)  
+    relatedword["newchars"] = [{"letter" => newchar, "index" => relatedword["start_index"]}]
+    relatedword["unknowns"] = []
+    
+    return relatedword
   end
   
-  def getline(line, direction)
+  def getline(line, direction, subemptytospace = false)
     case direction
       when :horizontal
         charsinline = @board[line -1 ].map{|char| char[0]}
       when :vertical
         charsinline = @board.transpose[line - 1].map{|char| char[0]}
     end
+    
+    # change empty elements of array in spaces
+    charsinline.each_index{|i| charsinline[i] = " " if charsinline[i].empty?} if subemptytospace == true
     return charsinline
   end
-
-  def findsolutionsinline(letters, line, direction)
-    print "Finding solutions in line " + line.to_s + ", direction " + direction.to_s + ". "
-    solutions = Array.new
-    matches = getmatches(getline(line, direction))
-    # check where solution fits
-    
-    # get newchars
-    
-    # check words in other direction
-    
-    return solutions
-  end
   
+  def findsolutionsinline(letters, line, direction)
+    puts "Finding solutions in line " + line.to_s + ", direction " + direction.to_s + ". "
+    matches = getmatches(getline(line, direction, true), letters)
+    
+    # add words in other direction to match
+    matches.each {|m|
+      relatedwords = Array.new 
+      case direction
+      when :horizontal
+        m["x"] = m["index"] + 1
+        m["y"] = line
+        m["newchars"].each {|nc|
+        newword = findwordaroundchar(m["x"] + nc["index"], :vertical, m["y"] - 1, nc["letter"])
+        relatedwords << newword if newword["word"].length > 1
+        }
+      when :vertical
+        m["x"] = line
+        m["y"] = m["index"] + 1
+        m["newchars"].each {|nc|
+        newword = findwordaroundchar(m["y"] + nc["index"], :horizontal, m["x"] - 1, nc["letter"])
+        relatedwords << newword if newword["word"].length > 1
+        }
+      end 
+         
+      m["relatedwords"] = relatedwords
+      m["direction"] = direction   
+    }
+    # remove matches which have related words not in dictionary
+    matches.select! {|match| match["relatedwords"].map {|w| w["in_dictionary"]}.count(false) == 0}
+    return matches.uniq
+  end
   
   def getmatches(characters, letters)
     letters = letters.split(//)
     matches = Array.new
     permutations = Hash.new
-    characters.each_index{|i| characters[i] = " " if characters[i].empty?}
    
     #calc permutations
     for i in 1..letters.count
@@ -102,31 +151,80 @@ class Solver
           word = newchars.join.split(/ /).first
           next if j != perm.count
           next if word.length <= perm.count
-          matches << {"word" => newchars.join.split(/ /).first, "i" => pos} if (word.length > 1)
+          matches << {"word" => newchars.join.split(/ /).first, "index" => pos} if (word.length > 1)
         end  
       }
     end
+    
     #find matches in dictionairies
-    okmatches = matches.map{|m| m["word"]}.uniq & (@wordlist + @custom_wordlist)
+    okmatches = matches.map{|m| m["word"]}.uniq & @wordlist
     matches.select! {|m| okmatches.include?(m["word"])}
     
+    #get details of new related word solution
     matches.each {|m|
       newchars = Array.new
-      m["word"].split(//).each_index {|i| newchars << {"letter" => m["word"].split(//)[i], "index" => i} unless characters[m["i"] + i] == m["word"].split(//)[i]}
+      m["word"].split(//).each_index {|i| newchars << {"letter" => m["word"].split(//)[i], "index" => i} unless characters[m["index"] + i] == m["word"].split(//)[i]}
       m["newchars"] = newchars
+      m["unknowns"] = []
     }
     return matches
   end
-
   
-  def solutions(letters, numberofsolutions = 20)
+  def calcpoints(calcsol)
+      points = 0
+      multiplier = 1
+      calcsol["word"].split(//).each_index {|charindex|
+        unless calcsol["unknowns"].include?(charindex) == true
+          points += @scores["nl"][calcsol["word"][charindex]]
+        end
+        }
+
+      calcsol["newchars"].each {|newchar|
+        case calcsol["direction"]
+          when :horizontal
+            x = newchar["index"] + calcsol["x"]
+            y = calcsol["y"]
+          when :vertical
+            x = calcsol["x"]
+            y = newchar["index"] + calcsol["y"]
+        end
+        case @multiplier_template[x-1][y-1][0]
+          when "DL"
+            unless calcsol["unknowns"].include?(newchar["index"]) == true
+              points += @scores["nl"][newchar["letter"]]
+            end
+          when "TL"
+            unless calcsol["unknowns"].include?(newchar["index"]) == true
+              points += 2 * @scores["nl"][newchar["letter"]]
+            end
+          when "DW"
+            multiplier = multiplier * 2
+          when "TW"
+            multiplier = multiplier * 3
+        end
+      }
+      return points*multiplier
+    end
+  
+  def getsolutions(letters, numberofsolutions = 20)
     solutions = Array.new
     # horizontal
-    (1..15).each {|line| solutions << findsolutionsinline(letters, line, :horizontal)}
-    # vertical
-    (1..15).each {|line| solutions << findsolutionsinline(letters, line, :vertical)}
+    (1..15).each {|line| solutions += findsolutionsinline(letters, line, :horizontal)}
+    #vertical
+    (1..15).each {|line| solutions += findsolutionsinline(letters, line, :vertical)}
     
     # calculate points of solutions
+    solutions.each{|solution|
+      points = 0
+
+      #get score of solution word
+      points += calcpoints(solution)
+      points += 40 if solution["newchars"].count == 7
+
+      #get score of other words
+      solution["relatedwords"].each{|solution_word| points += calcpoints(solution_word)}
+      solution["points"] = points
+    }
     
     return solutions.sort_by{|solution| solution["points"]}.reverse[0..[numberofsolutions-1, solutions.count].min]
   end
