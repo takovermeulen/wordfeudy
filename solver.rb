@@ -125,13 +125,22 @@ class Solver
   end
   
   def getmatches(characters, letters)
-    letters = letters.split(//)
+    letters = letters.split(//).map {|c| {"letter" => c, "unknown" => false}}
+    num_unknowns = letters.map{|l| l["letter"]}.count("?")
     matches = Array.new
     permutations = Hash.new
-    #unknowns_perm = ("a".."z").to_a * letters.count("?")
+    letter_combos = Array.new
+    
+    #handle unknowns
+    (("a".."z").to_a.map{|c| {"letter" => c, "unknown" => true}} * num_unknowns).permutation(num_unknowns).to_a.each {|p| letter_combos << letters.reject{|l| l["letter"] == "?"} + p}
+    
     #calc permutations
-    for i in 1..letters.count
-      permutations[i] = letters.permutation(i).to_a.uniq
+    for i in 1..(letters.count)
+      permutations[i] = Array.new
+      letter_combos.each {|letters|
+        permutations[i] += letters.permutation(i).to_a.uniq
+      }
+      permutations[i].uniq!
     end
     
     #find matches where permutations fit
@@ -143,7 +152,7 @@ class Solver
           j = 0
           newchars.each_index{|i|
             if newchars[i] == " "
-              newchars[i] = perm[j] 
+              newchars[i] = perm[j]["letter"] 
               j += 1
             end
             break if perm.count == j
@@ -151,7 +160,9 @@ class Solver
           word = newchars.join.split(/ /).first
           next if j != perm.count
           next if word.length <= perm.count
-          matches << {"word" => newchars.join.split(/ /).first, "index" => pos} if (word.length > 1)
+          unknowns = []
+          perm.each_index {|i| unknowns << i if perm[i]["unknown"] == true}
+          matches << {"word" => newchars.join.split(/ /).first, "index" => pos, "unknowns" => unknowns} if (word.length > 1)
         end  
       }
     end
@@ -165,7 +176,6 @@ class Solver
       newchars = Array.new
       m["word"].split(//).each_index {|i| newchars << {"letter" => m["word"].split(//)[i], "index" => i} unless characters[m["index"] + i] == m["word"].split(//)[i]}
       m["newchars"] = newchars
-      m["unknowns"] = []
     }
     return matches
   end

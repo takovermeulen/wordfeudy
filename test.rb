@@ -19,13 +19,11 @@ currentboard = [[["", false], ["", false], ["", false], ["", false], ["t", false
 [["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["z", false], ["o", false], ["n", false], ["k", false], ["", false], ["", false], ["", false]], 
 [["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["", false], ["e", false], ["n", false], ["t", false], ["t", false], ["e", false], ["", false], ["", false]], 
 [["", false], ["", false], ["", false], ["", false], ["r", false], ["a", false], ["i", false], ["o", false], ["s", false], ["", false], ["e", false], ["", false], ["", false], ["", false], ["", false]]]
-letters = "testje"
+
+letters = "test?"
 
 @sol = Solver.new(currentboard, wf.multiplier_template)
 puts @sol.getsolutions(letters, 10)
-
-#puts @sol.getmatches(["", "","", "s","","","d","e","","","","s","","","a"], "test")
-
 
 
 
