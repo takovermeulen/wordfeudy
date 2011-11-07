@@ -128,7 +128,7 @@ class Solver
     letters = letters.split(//)
     matches = Array.new
     permutations = Hash.new
-   
+    #unknowns_perm = ("a".."z").to_a * letters.count("?")
     #calc permutations
     for i in 1..letters.count
       permutations[i] = letters.permutation(i).to_a.uniq
@@ -209,7 +209,9 @@ class Solver
   def getsolutions(letters, numberofsolutions = 20)
     solutions = Array.new
     # horizontal
-    (1..15).each {|line| solutions += findsolutionsinline(letters, line, :horizontal)}
+    (1..15).each {|line| 
+      solutions += findsolutionsinline(letters, line, :horizontal)
+      print solutions.count}
     #vertical
     (1..15).each {|line| solutions += findsolutionsinline(letters, line, :vertical)}
     
