@@ -17,7 +17,7 @@ class Solver
     custom_wordlist = File.open("custom_dict.txt", "rb") {|f| f.read}.split("\n").map {|word| word.chomp.downcase}
  
     # read board and add to custom dictionary if it contains new words 
-    newwords = findboardwords()
+    newwords = findboardwords().uniq
     File.open("custom_dict.txt", 'a') {|f| f.puts(newwords - custom_wordlist)}
     
     # read dictionary (already a clean lowercase file)
@@ -135,7 +135,7 @@ class Solver
     end
     
     #find matches where permutations fit
-    for numchars in 2..([letters.count, characters.count(" ")].min)
+    for numchars in 1..([letters.count, characters.count(" ")].min)
       permutations[numchars].each { |perm|
         for pos in 0..(characters.count - 1)
           next if characters[pos - 1] != " " unless (pos -1) < 0
