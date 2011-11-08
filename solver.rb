@@ -13,18 +13,20 @@ class Solver
     @multiplier_template = multiplier_template
     @board = board
     
-    #read custom dict with valid board words played earlier
+    #read custom dict with valid board words played earlier and illegal words played earlier
     custom_wordlist = File.open("custom_dict.txt", "rb") {|f| f.read}.split("\n").map {|word| word.chomp.downcase}
- 
-    # read board and add to custom dictionary if it contains new words 
-    newwords = findboardwords().uniq
-    File.open("custom_dict.txt", 'a') {|f| f.puts(newwords - custom_wordlist)}
+    ok_words = custom_wordlist.reject{|word| word[0] != "+"}.map {|word| word[1, word.length]}
+    illegal_words = custom_wordlist.reject{|word| word[0] != "-"}.map {|word| word[1, word.length]}
     
     # read dictionary (already a clean lowercase file)
     @wordlist = File.open("dict.txt", "rb") {|f| f.read}.split("\n")   
     
-    # add board words to current dictionary and remove any duplicates
-    @wordlist += newwords
+    # read board and add to custom dictionary if it contains new words 
+    newwords = findboardwords().uniq
+    File.open("custom_dict.txt", 'a') {|f| f.puts((newwords - ok_words - @wordlist).map{|word| "+" + word})}
+    
+    # add board words and words from custom dictionary to current dictionary and remove any duplicates
+    @wordlist += newwords + ok_words - illegal_words
     @wordlist.uniq! 
   end
   
