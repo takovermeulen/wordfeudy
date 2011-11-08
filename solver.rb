@@ -105,6 +105,7 @@ class Solver
         m["y"] = line
         m["newchars"].each {|nc|
         newword = findwordaroundchar(m["x"] + nc["index"], :vertical, m["y"] - 1, nc["letter"])
+        newword["unknowns"] << newword["newchars"][0]["index"] if m["unknowns"].include?(nc["index"])
         relatedwords << newword if newword["word"].length > 1
         }
       when :vertical
@@ -112,6 +113,7 @@ class Solver
         m["y"] = m["index"] + 1
         m["newchars"].each {|nc|
         newword = findwordaroundchar(m["y"] + nc["index"], :horizontal, m["x"] - 1, nc["letter"])
+        newword["unknowns"] << newword["newchars"][0]["index"] if m["unknowns"].include?(nc["index"])
         relatedwords << newword if newword["word"].length > 1
         }
       end 
